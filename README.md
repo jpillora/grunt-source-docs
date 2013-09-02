@@ -1,4 +1,4 @@
-grunt-source-web
+grunt-source-docs
 ====================
 
 A premade Grunt environment to build optimized static websites,

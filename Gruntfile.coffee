@@ -1,5 +1,6 @@
 fs = require "fs"
 path = require "path"
+jade = require './node_modules/grunt-contrib-jade/node_modules/jade'
 
 module.exports = (grunt) ->
 
@@ -11,12 +12,47 @@ module.exports = (grunt) ->
   grunt.util._.defaults output,
     js: "js/app.js"
     css: "css/app.css"
-    html: "index.html"
+    html: "../index.html"
 
   #check options
   env = grunt.option "env"
   env = "dev" unless env in ["dev","prod"]
   dev = env is "dev"
+
+  #jade data
+  jadeData =
+    JSON: JSON
+    showFile: (file) ->
+      grunt.file.read path.join grunt.source.dir, file
+    source: grunt.source
+    env: env
+    min: if env is 'prod' then '.min' else ''
+    dev: dev
+    date: new Date()
+    manifest: "<%= manifest.generate.dest %>"
+    css: "<style>#{grunt.file.read(output.css)}</style>"
+    js: "<script>#{grunt.file.read(output.js)}</script>"
+
+  #include directory helper
+  includeDir = (dir) ->
+    unless grunt.file.isDir dir
+      grunt.log.writeln "Not a directory: #{dir}"
+      return ""
+    results = ""
+    fs.readdirSync(dir).forEach (file) ->
+      full = path.join dir, file
+      return if grunt.file.isDir full
+      input = grunt.file.read full
+      data = Object.create jadeData
+      data.includeDir = (subdir) ->
+        includeDir path.join dir, subdir
+      output = jade.compile(input,{pretty:dev,doctype:"5"})(data)
+      results += output + "\n"
+    return results
+
+  #root include dir
+  jadeData.includeDir = (dir) ->
+    includeDir path.join "src", "views", dir
 
   #initialise config
   grunt.initConfig
@@ -70,18 +106,8 @@ module.exports = (grunt) ->
         dest: output.html
         options:
           pretty: dev
-          data:
-            JSON: JSON
-            showFile: (file) ->
-              grunt.file.read path.join base, file
-            source: grunt.source
-            env: env
-            min: if env is 'prod' then '.min' else ''
-            dev: dev
-            date: new Date()
-            manifest: "<%= manifest.generate.dest %>"
-            css: "<style>#{grunt.file.read(output.css)}</style>"
-            js: "<script>#{grunt.file.read(output.js)}</script>"
+          doctype: "5"
+          data: jadeData
     stylus:
       compile:
         src: "src/styles/app.styl"
