@@ -1,6 +1,10 @@
 fs = require "fs"
 path = require "path"
+hljs = require "highlight.js"
 jade = require './node_modules/grunt-contrib-jade/node_modules/jade'
+
+marked = require "marked"
+marked.setOptions gfm:true
 
 module.exports = (grunt) ->
 
@@ -22,8 +26,29 @@ module.exports = (grunt) ->
   #jade data
   jadeData =
     JSON: JSON
+    showCodeFile: (file) ->
+      lang = switch path.extname(file)
+        when ".js"
+          "javascript"
+        when ".coffee"
+          "coffeescript"
+        else
+          "bash"
+
+      code = jadeData.showFile file
+      
+
+      code = code.replace(/(require\(['"])([\.\/]+)(['"]\))/, "$1#{grunt.source.name}$3")
+
+      html = jadeData.showCode lang, code
+      html
+
+    showCode: (lang, str) ->
+      html = hljs.highlight(lang, str).value
+      "<pre><code>#{html}</code></pre>"
+
     showFile: (file) ->
-      grunt.file.read path.join grunt.source.dir, file
+      grunt.file.read path.join "..", file
     source: grunt.source
     env: env
     min: if env is 'prod' then '.min' else ''
