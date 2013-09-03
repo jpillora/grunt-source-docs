@@ -68,7 +68,7 @@ module.exports = (grunt) ->
         files: 'src/views/**/*.jade'
         tasks: 'views'
       styles:
-        files: 'src/styles/**/*.styl'
+        files: 'src/styles/**/*.{css,styl}'
         tasks: 'styles'
       config:
         files: ['Gruntsource.json']
